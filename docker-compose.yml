@@ -1,0 +1,77 @@
+services:
+  namenode:
+    build: ./hadoop
+    hostname: namenode
+    container_name: namenode
+    ports:
+      - "9870:9870" # Hadoop NameNode 웹 UI
+      - "9000:9000" # HDFS
+    volumes:
+      - hadoop-namenode:/opt/hadoop/dfs/name
+    command: bash -c "hdfs namenode"
+
+  datanode:
+    build: ./hadoop
+    hostname: datanode
+    container_name: datanode
+    depends_on:
+      - namenode
+    volumes:
+      - hadoop-datanode:/opt/hadoop/dfs/data
+    command: bash -c "hdfs datanode"
+
+  resourcemanager:
+    build: ./hadoop
+    hostname: resourcemanager
+    container_name: resourcemanager
+    depends_on:
+      - namenode
+    ports:
+      - "8088:8088" # ResourceManager 웹 UI
+    command: bash -c "yarn resourcemanager"
+
+  nodemanager:
+    build: ./hadoop
+    hostname: nodemanager
+    container_name: nodemanager
+    depends_on:
+      - resourcemanager
+    command: bash -c "yarn nodemanager"
+
+  master:
+    build: ./spark
+    hostname: master
+    container_name: spark-master
+    depends_on:
+      - namenode
+    ports:
+      - "8080:8080" # Spark Master 웹 UI
+
+
+  worker:
+    build: ./spark
+    hostname: worker
+    container_name: spark-worker
+    depends_on:
+      - master
+
+
+  hbase:
+    build: ./hbase
+    hostname: hbase
+    container_name: hbase
+    depends_on:
+      - namenode
+      - datanode
+    command: bash -c "start-hbase.sh"
+
+  zookeeper:
+    image: zookeeper:3.5
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+volumes:
+  hadoop-namenode:
+  hadoop-datanode:
